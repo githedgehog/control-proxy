@@ -1,0 +1,69 @@
+name: TinyProxy Image Build
+
+concurrency:
+  group: ci-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [ "master" ]
+    tags: [ 'v*.*.*']
+env:
+  # Use docker.io for Docker Hub if empty
+  REGISTRY: ghcr.io
+  IMAGE_NAME: githedgehog/fabricator/control-proxy
+
+
+jobs:
+  compile:
+    name: compile
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update Binaries
+        run: sudo apt-get update
+
+      - name: Install Static Libs
+        run: sudo apt install -y build-essential
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Just
+        uses: extractions/setup-just@v2
+
+      - name: Setup Oras
+        uses: oras-project/setup-oras@v1
+        with:
+          version: 1.2.0
+
+      - name: Download
+        run: |
+          just download
+
+      - name: Uncompress
+        run: |
+          just uncompress
+
+      - name: compile
+        run: just compile
+
+      - name: Login to ghcr.io
+        if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Build and Push Container
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
