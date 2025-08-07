@@ -22,7 +22,11 @@ compile:
   ./configure LDFLAGS="-static" --enable-manpage_support=no
   make
 
+[working-directory: 'workdir/src/']
 push: && version
   oras push ghcr.io/githedgehog/fabricator/control-proxy:{{version}} tinyproxy
 
+[working-directory: 'workdir/src/']
+local-push: && version
+  oras push --plain-http 127.0.0.1:30000/githedgehog/fabricator/control-proxy:{{version}} tinyproxy
 
