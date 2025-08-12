@@ -5,6 +5,10 @@ version_dirty := `[ -z "$(git status -s)" ] || echo "-$(date +"%H%M%S")"`
 version := `git describe --tags --dirty --always` + version_dirty
 
 tinyproxy_version := "1.11.2"
+hh_version := "hh2"
+oci_uri := "githedgehog/fabricator/control-proxy"
+oci_repo := "127.0.0.1:30000"
+
 
 version:
   @echo "Using version {{version}} with tinyproxy version {{tinyproxy_version}}"
@@ -26,7 +30,8 @@ compile:
 push: && version
   oras push ghcr.io/githedgehog/fabricator/control-proxy:{{version}} tinyproxy
 
-[working-directory: 'workdir/src/']
-local-push: && version
-  oras push --plain-http 127.0.0.1:30000/githedgehog/fabricator/control-proxy:{{version}} tinyproxy
+local-push:
+  skopeo login --tls-verify=false {{oci_repo}}
+  docker build --platform=linux/amd64 -t {{oci_repo}}/{{oci_uri}}:v{{tinyproxy_version}}-{{hh_version}} -f Dockerfile .
+  skopeo --insecure-policy copy --dest-tls-verify=false docker-daemon:{{oci_repo}}/{{oci_uri}}:v{{tinyproxy_version}}-{{hh_version}} docker://{{oci_repo}}/{{oci_uri}}:v{{tinyproxy_version}}-{{hh_version}}
 
