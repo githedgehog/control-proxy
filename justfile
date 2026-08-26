@@ -4,8 +4,8 @@ default:
 version_dirty := `[ -z "$(git status -s)" ] || echo "-$(date +"%H%M%S")"`
 version := `git describe --tags --dirty --always` + version_dirty
 
-tinyproxy_version := "1.11.2"
-hh_version := "hh2"
+tinyproxy_version := "1.11.3"
+hh_version := "hh1"
 oci_uri := "githedgehog/fabricator/control-proxy"
 oci_repo := "127.0.0.1:30000"
 
